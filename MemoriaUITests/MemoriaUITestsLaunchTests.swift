@@ -1,10 +1,3 @@
-//
-//  MemoriaUITestsLaunchTests.swift
-//  MemoriaUITests
-//
-//  Created by Emre Guvench on 10.12.2024.
-//
-
 import XCTest
 
 final class MemoriaUITestsLaunchTests: XCTestCase {
