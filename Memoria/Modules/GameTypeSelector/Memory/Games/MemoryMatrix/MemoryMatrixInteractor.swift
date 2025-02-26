@@ -1,6 +1,7 @@
+import Foundation
+
 protocol MemoryMatrixInteractorProtocol: AnyObject {
     func generateSquares(for size: (rows: Int, cols: Int))
-    func validateSelection(_ selection: [Position], expected: [Position])
 }
 
 struct Position: Hashable {
@@ -13,7 +14,7 @@ class MemoryMatrixInteractor: MemoryMatrixInteractorProtocol {
 
     func generateSquares(for size: (rows: Int, cols: Int)) {
         var positions: Set<Position> = []
-        let count = max(2, size.rows * size.cols / 6)
+        let count = max(2, size.rows * size.cols / 4)
 
         while positions.count < count {
             let row = Int.random(in: 0..<size.rows)
@@ -22,12 +23,5 @@ class MemoryMatrixInteractor: MemoryMatrixInteractorProtocol {
         }
 
         presenter?.didGenerateSquares(Array(positions))
-    }
-
-    func validateSelection(_ selection: [Position], expected: [Position]) {
-        let incorrectSquare = selection.first { !expected.contains($0) }
-        
-        let isCorrect = incorrectSquare == nil
-        presenter?.didValidateSelection(isCorrect: isCorrect, incorrectSquare: incorrectSquare)
     }
 }

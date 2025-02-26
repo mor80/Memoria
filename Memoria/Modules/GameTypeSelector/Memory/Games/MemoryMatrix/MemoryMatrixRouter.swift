@@ -14,7 +14,7 @@ class MemoryMatrixRouter: MemoryMatrixRouterProtocol {
         presenter.view = view
         presenter.interactor = interactor
         presenter.router = MemoryMatrixRouter()
-        interactor.presenter = presenter 
+        interactor.presenter = presenter
 
         return view
     }

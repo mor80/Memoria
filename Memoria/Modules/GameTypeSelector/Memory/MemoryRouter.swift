@@ -29,9 +29,9 @@ class MemoryGamesRouter: GameTypeRouterProtocol {
         case "Matrix Memo":
             let memoryMatrix = MemoryMatrixRouter.createModule()
             viewController?.navigationController?.pushViewController(memoryMatrix, animated: true)
-        case "Reaction":
-            let reactionGamesModule = ReactionGamesRouter.createModule()
-            viewController?.navigationController?.pushViewController(reactionGamesModule, animated: true)
+        case "Sequence Memo":
+            let sequenceMemory = SequenceMemoryRouter.createModule()
+            viewController?.navigationController?.pushViewController(sequenceMemory, animated: true)
         default:
             break
         }

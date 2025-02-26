@@ -2,7 +2,7 @@ class ReactionGamesInteractor: GameTypeInteractorProtocol {
     weak var presenter: GameTypeInteractorOutputProtocol?
     
     func fetchGames() {
-        let games = ["BlaBla", "Bubu", "Number Memo"]
+        let games = ["Stroop Game", "Bubu", "Number Memo"]
         presenter?.didFetchGames(games)
     }
 }

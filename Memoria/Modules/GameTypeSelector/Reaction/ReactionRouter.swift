@@ -21,6 +21,19 @@ class ReactionGamesRouter: GameTypeRouterProtocol {
     
     func navigateToGameDetail(gameName: String) {
         print("Navigating to game: \(gameName)")
-        // Здесь будет переход на экран конкретной игры
+        
+        switch gameName {
+        case "Stroop Game":
+            let stroopGame = StroopGameRouter.createModule()
+            viewController?.navigationController?.pushViewController(stroopGame, animated: true)
+        case "Matrix Memo":
+            let memoryMatrix = MemoryMatrixRouter.createModule()
+            viewController?.navigationController?.pushViewController(memoryMatrix, animated: true)
+        case "Sequence Memo":
+            let sequenceMemory = SequenceMemoryRouter.createModule()
+            viewController?.navigationController?.pushViewController(sequenceMemory, animated: true)
+        default:
+            break
+        }
     }
 }

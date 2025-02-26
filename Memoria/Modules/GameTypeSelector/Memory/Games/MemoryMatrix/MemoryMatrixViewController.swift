@@ -6,7 +6,13 @@ protocol MemoryMatrixViewProtocol: AnyObject {
     func hideSquares()
     func updateLevel(level: Int)
     func showGameOver()
-    func showIncorrectSelection(at position: Position) // 🔥 Добавлено для ошибок
+    func showIncorrectSelection(at position: Position)
+
+    // Подсветить одну клетку указанным цветом (для правильных кликов)
+    func highlightSelection(at position: Position, color: UIColor)
+
+    // Показать, сколько ошибок осталось
+    func updateMistakesLeft(_ left: Int)
 }
 
 class MemoryMatrixViewController: UIViewController, MemoryMatrixViewProtocol {
@@ -14,31 +20,52 @@ class MemoryMatrixViewController: UIViewController, MemoryMatrixViewProtocol {
 
     private var gridView = UIStackView()
     private var gridButtons: [[UIButton]] = []
-    private var selectedSquares: [Position] = []
+
+    // Флаг для блокировки нажатий на время подсветки
+    private var isInteractionBlocked = false
+
+    private let mistakesLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Ошибок осталось: 3"
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        return label
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
-        setupGrid()
+        setupLayout()
         presenter.startGame()
     }
 
-    private func setupGrid() {
+    private func setupLayout() {
+        let topStack = UIStackView(arrangedSubviews: [mistakesLabel])
+        topStack.axis = .vertical
+        topStack.alignment = .center
+        topStack.spacing = 8
+        topStack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(topStack)
+
         gridView.axis = .vertical
         gridView.alignment = .center
         gridView.spacing = 5
         gridView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(gridView)
 
-        NSLayoutConstraint.activate([
-            gridView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            gridView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
+        topStack.pinTop(to: view.safeAreaLayoutGuide.topAnchor, 16)
+        topStack.pinCenterX(to: view)
+        
+        gridView.pinCenter(to: view)
     }
 
     func displayGrid(size: (rows: Int, cols: Int)) {
-        // Очистка старых кнопок
-        gridButtons.forEach { row in row.forEach { $0.removeFromSuperview() } }
+        // Удаляем предыдущие кнопки
+        for row in gridButtons {
+            for button in row {
+                button.removeFromSuperview()
+            }
+        }
         gridButtons.removeAll()
         gridView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
@@ -62,18 +89,37 @@ class MemoryMatrixViewController: UIViewController, MemoryMatrixViewProtocol {
             }
             gridButtons.append(buttonRow)
         }
+
+        // В начале нового раунда разрешаем нажатие,
+        // но дальше временно заблокируем при подсветке
+        isInteractionBlocked = false
     }
 
     func highlightSquares(_ squares: [Position]) {
-        squares.forEach { gridButtons[$0.row][$0.col].backgroundColor = .blue }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        // Блокируем клики на время подсветки
+        isInteractionBlocked = true
+
+        squares.forEach {
+            gridButtons[$0.row][$0.col].backgroundColor = .blue
+        }
+
+        // Время подсветки = 0.3 * количество клеток
+        let highlightDuration = 0.3 * Double(squares.count)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + highlightDuration) {
+            // Возвращаем всем клеткам исходный цвет
             self.hideSquares()
+            // Снова разрешаем нажатия
+            self.isInteractionBlocked = false
         }
     }
 
     func hideSquares() {
-        gridButtons.forEach { row in row.forEach { $0.backgroundColor = .lightGray } }
-        selectedSquares.removeAll()
+        for row in gridButtons {
+            for button in row {
+                button.backgroundColor = .lightGray
+            }
+        }
     }
 
     func updateLevel(level: Int) {
@@ -81,33 +127,48 @@ class MemoryMatrixViewController: UIViewController, MemoryMatrixViewProtocol {
     }
 
     func showGameOver() {
-        let alert = UIAlertController(title: "Игра окончена", message: "Вы допустили 3 ошибки!", preferredStyle: .alert)
+        let alert = UIAlertController(
+            title: "Игра окончена",
+            message: "Вы допустили 3 ошибки!",
+            preferredStyle: .alert
+        )
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
             self.presenter.startGame()
         }))
         present(alert, animated: true)
     }
 
-    func showIncorrectSelection(at position: Position) { // 🔥 Новая функция
+    func showIncorrectSelection(at position: Position) {
         let button = gridButtons[position.row][position.col]
         button.backgroundColor = .red
-        
+
+        // Через 0.5 сек возвращаем цвет
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             button.backgroundColor = .lightGray
         }
     }
 
+    func highlightSelection(at position: Position, color: UIColor) {
+        let button = gridButtons[position.row][position.col]
+        button.backgroundColor = color
+    }
+
+    func updateMistakesLeft(_ left: Int) {
+        mistakesLabel.text = "Ошибок осталось: \(left)"
+    }
+
     @objc private func squareTapped(_ sender: UIButton) {
-        let row = sender.tag / gridButtons[0].count
-        let col = sender.tag % gridButtons[0].count
-
-        let selectedPosition = Position(row: row, col: col)
-
-        if selectedSquares.contains(selectedPosition) {
-            return // Не даем повторно выбирать один и тот же квадрат
+        // Если заблокировано — игнорируем
+        guard !isInteractionBlocked else {
+            return
         }
 
-        selectedSquares.append(selectedPosition)
-        presenter.checkSelection(selectedSquares)
+        guard let firstRow = gridButtons.first else { return }
+        let colsCount = firstRow.count
+        let row = sender.tag / colsCount
+        let col = sender.tag % colsCount
+
+        let tappedPosition = Position(row: row, col: col)
+        presenter.userTapped(position: tappedPosition)
     }
 }
