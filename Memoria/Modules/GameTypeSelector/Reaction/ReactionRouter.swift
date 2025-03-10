@@ -26,9 +26,9 @@ class ReactionGamesRouter: GameTypeRouterProtocol {
         case "Stroop Game":
             let stroopGame = StroopGameRouter.createModule()
             viewController?.navigationController?.pushViewController(stroopGame, animated: true)
-        case "Matrix Memo":
-            let memoryMatrix = MemoryMatrixRouter.createModule()
-            viewController?.navigationController?.pushViewController(memoryMatrix, animated: true)
+        case "Focus Target":
+            let focusTarget = FocusTargetRouter.createModule()
+            viewController?.navigationController?.pushViewController(focusTarget, animated: true)
         case "Sequence Memo":
             let sequenceMemory = SequenceMemoryRouter.createModule()
             viewController?.navigationController?.pushViewController(sequenceMemory, animated: true)
